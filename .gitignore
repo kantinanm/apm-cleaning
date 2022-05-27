@@ -1,0 +1,12 @@
+.cache
+__pycache__
+*.csv
+*.xlsx
+*.xls
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
