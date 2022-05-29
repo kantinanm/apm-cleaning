@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import time
 
 
@@ -13,6 +14,21 @@ def isHasParentCare(pid: str) :
         return 1 #has
     else:
         return 0
+
+def calAge(frame) :
+    #pd.datetime.now().year - x.year
+    if(pd.isnull(frame["birth_date"])):
+        return frame["age"] 
+    else:
+        return pd.datetime.now().year - frame["birth_date"].year
+
+def setDob(dob,age) :
+    #pd.datetime.now().year - x.year
+    if(pd.isnull(dob)):
+        return '01-01-'+str(pd.datetime.now().year-age)
+    else:
+        return dob
+    #return "a"
 
 def mapTypecripple(value: str) :
     if value == "ทางการเคลื่อนไหวหรือทางร่างกาย":
@@ -132,11 +148,20 @@ df = pd.read_excel("cripple_db2.xlsx",  usecols=colsIndex, names=namesCol,dtype=
 #data = df.head(10)
 
 #df2 = df.drop(df[df['pid'].str.strip() !=""].index, inplace = True)
-df.dropna()
+
+#df.dropna(inplace=True)
+df.dropna(thresh=2,subset=['birth_date', 'age'],inplace=True)
 #df = df[df.pid.notnull()]
 
 
 df['fullname'] = df['prename'].map(str) + df['firstname'].map(str) + ' ' + df['lastname'].map(str)
+df["birth_date2"] = df.apply(lambda x : setDob(x['birth_date'],x['age']),axis=1) 
+df["dob"] = pd.to_datetime(df["birth_date"])
+#df['age'] =pd.to_datetime('today').year - df.birth_date.dt.year
+df["age"] = df["dob"].apply(lambda x : (pd.datetime.now().year - x.year))
+
+
+#df["age"] =df["age"].map(int)
 df['curator_pid'] = df['curator_pid'].astype('str')
 df['lat'] = df['lat'].astype('str')
 df['long'] = df['long'].astype('str')
@@ -151,6 +176,18 @@ df['sub_district_id']=df['province_code'].map(str) + df['amphoe_code'].str.zfill
 df['cripple_category']=df.apply(lambda x: mapTypecripple(x['type_cripple'].strip()),axis=1)
 df['is_has_parent_care']=df.apply(lambda x: isHasParentCare(x['curator_pid']),axis=1)
 
+#df['income_cripple']=df['income_cripple'].apply(lambda x: 0.0 if x <= 0 else x)
+df['income_cripple'] = np.where(df['income_cripple'].isna(), 0, df['income_cripple'])
+
+
+age_cate=['0-18','19-25','26-35','36-45','56-65','66-75','76-85','85+']
+
+df['age_group'] =pd.cut(df.age,
+    bins=[0,18,25,35,45,55.65,75,85,np.Inf],
+    labels=age_cate,
+    right=True
+).astype(pd.CategoricalDtype(age_cate,ordered=False))
+
 
 #f['ap_code'] = df['province_code'].map(str) + (df['amphoe_code'].astype(int)).zfill(2)
 #df['tb_code'] = df['province_code'].map(str) + (df['amphoe_code'].astype(int)).zfill(2).map(str) + (df['tumbon_code'].astype(int)).normalize().map(str)
@@ -161,20 +198,38 @@ df['is_has_parent_care']=df.apply(lambda x: isHasParentCare(x['curator_pid']),ax
 
 print(df.info())
 
-print(df['deformname'].unique())
+#print(df['deformname'].unique())
 
-print(df['type_cripple'].unique())
+#print(df['type_cripple'].unique())
 
+#df.columns=['prename','firstname','lastname','pid']
+
+
+#print(df.age_group)
+#print(df['income_cripple'].unique())
+
+column = df["income_cripple"]
+max_value = column.max()
+print("max value")
+print(max_value)
+
+
+df_new = df[['pid','prename','firstname','lastname','age','sub_district_id','tumbon','district_id', 'amphoe','province_id', 'province','lat','long','birth_date2','age_group','cripple_category','detail_cripple','income_cripple','is_has_parent_care','curator_pid', 'curator_relation_name', 'curator_other']]
+print(df_new.info())
+print(df_new.head(10))
+
+
+df_new.to_csv("export_data_cripple.csv",encoding='utf-8-sig')
 
 
 #print(df)
 #print(df.describe()) #หาค่าสถิติเบื้องต้นของทุกคอลัมน์ใน dataframe
-df.to_csv("export_map_cripple.csv",encoding='utf-8-sig')
+#df.to_csv("export_map_cripple.csv",encoding='utf-8-sig')
 
 
 
-dfCat = pd.DataFrame(df['type_cripple'].unique())
-dfCat.to_csv("cat_export.csv",encoding='utf-8-sig')
+#dfCat = pd.DataFrame(df['type_cripple'].unique())
+#dfCat.to_csv("cat_export.csv",encoding='utf-8-sig')
 
 end = time.time()
 print('\nExperiment Completed\nTotal Time: {:.2f} seconds'.format(end-start))
