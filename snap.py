@@ -9,11 +9,11 @@ def apply_complex_function(x):
 def no_trailing_zero(value: str) :
     return value.rstrip("0")
 
-def isHasParentCare(pid: str) :
-    if(pid and pid.strip() !=""):
-        return 1 #has
+def isHasParentCare(pid) :
+    if(pid=="nan"):
+        return 0 
     else:
-        return 0
+        return 1 #has
 
 def calAge(frame) :
     #pd.datetime.now().year - x.year
@@ -56,7 +56,7 @@ start = time.time()
 # col
 # 5 birth_date
 # 6 age
-# 8 sex
+# 8 sex ชาย หญิง
 # 15 tumbon
 # 16 tumbon_code
 # 17 amphoe
@@ -64,13 +64,13 @@ start = time.time()
 # 19 province
 # 20 province_code
 # 21 postcode
-# 22 prename_curator
-# 23 firstname_curator
-# 24 lastname_curator
-# 25 curator_pid
-# 26 curator_relation_code
-# 27 curator_relation_name
-# 28 curator_other
+# 23 prename_curator ##
+# 24 firstname_curator
+# 25 lastname_curator
+# 26 curator_pid
+# 27 curator_relation_code
+# 28 curator_relation_name
+# 29 curator_other ##
 # 43 deformname
 # 44 card_issue_date
 # 45 card_expire_date
@@ -94,7 +94,7 @@ start = time.time()
 #65 amphoe_cripple
 #66 province_cripple
 
-colsIndex=[1,2,3,4,5,6,8,15,16,17,18,19,20,21,22,23,24,25,26,27,28,43,44,45,48,49,50,51,53,56,57,58,59,60,61,62,63,64,65,66]
+colsIndex=[1,2,3,4,5,6,8,15,16,17,18,19,20,21,23,24,25,26,27,28,29,43,44,45,48,49,50,51,53,56,57,58,59,60,61,62,63,64,65,66]
 #colsIndex=[1,2,3,4,5,6,8,15,16,17,18,19,20,21,22,23,24,25,26,27,28,43,44,45,48,49,50,51,53,56,57,58,59,60,61,62,63,64,65,66]
 namesCol=['prename', 
  'firstname',
@@ -162,7 +162,7 @@ df["age"] = df["dob"].apply(lambda x : (pd.datetime.now().year - x.year))
 
 
 #df["age"] =df["age"].map(int)
-df['curator_pid'] = df['curator_pid'].astype('str')
+#df['curator_pid'] = df['curator_pid'].astype('str')
 df['lat'] = df['lat'].astype('str')
 df['long'] = df['long'].astype('str')
 df['type_cripple'] = df['type_cripple'].astype('str')
@@ -174,7 +174,9 @@ df['district_code']=df.apply(lambda x: no_trailing_zero(x['tumbon_code']),axis=1
 df['district_code'].astype(str)
 df['sub_district_id']=df['province_code'].map(str) + df['amphoe_code'].str.zfill(2)+df['district_code'].str.zfill(2)
 df['cripple_category']=df.apply(lambda x: mapTypecripple(x['type_cripple'].strip()),axis=1)
-df['is_has_parent_care']=df.apply(lambda x: isHasParentCare(x['curator_pid']),axis=1)
+df['curator_pid'] = df['curator_pid'].astype(str)
+df['c_pid']=df['curator_pid']
+df['is_has_parent_care']=df.apply(lambda x: isHasParentCare(x['c_pid']),axis=1)
 
 #df['income_cripple']=df['income_cripple'].apply(lambda x: 0.0 if x <= 0 else x)
 df['income_cripple'] = np.where(df['income_cripple'].isna(), 0, df['income_cripple'])
@@ -188,12 +190,14 @@ df['age_group'] =pd.cut(df.age,
     right=True
 ).astype(pd.CategoricalDtype(age_cate,ordered=False))
 
+df['curator_fullname'] = df['prename_curator'].map(str) + df['firstname_curator'].map(str) + ' ' + df['lastname_curator'].map(str)
+
 
 #f['ap_code'] = df['province_code'].map(str) + (df['amphoe_code'].astype(int)).zfill(2)
 #df['tb_code'] = df['province_code'].map(str) + (df['amphoe_code'].astype(int)).zfill(2).map(str) + (df['tumbon_code'].astype(int)).normalize().map(str)
 #f'{3.140:g}'
 
-
+print(df.head(10))
 
 
 print(df.info())
@@ -214,7 +218,7 @@ print("max value")
 print(max_value)
 
 
-df_new = df[['pid','prename','firstname','lastname','age','sub_district_id','tumbon','district_id', 'amphoe','province_id', 'province','lat','long','birth_date2','age_group','cripple_category','detail_cripple','income_cripple','is_has_parent_care','curator_pid', 'curator_relation_name', 'curator_other']]
+df_new = df[['pid','prename','firstname','lastname','age','status_cripple','sub_district_id','tumbon','district_id', 'amphoe','province_id', 'province','lat','long','birth_date2','age_group','cripple_category','detail_cripple','income_cripple', 'education','occupation','is_has_parent_care','curator_fullname', 'curator_relation_name', 'curator_other']]
 print(df_new.info())
 print(df_new.head(10))
 
